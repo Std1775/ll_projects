@@ -34,9 +34,12 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
 	char *address = strtok(NULL, ",");
 	char *hours = strtok(NULL, ",");
 
-	strncpy(employees[dbhdr->count-1]->name, name, sizeof(employees[dbhdr->count-1]->name));
-	strncpy(employees[dbhdr->count-1]->address, address, sizeof(employees[dbhdr->count-1]->address));
-	employees[dbhdr->count-1]->hours = atoi(hours);
+	struct employee_t *new_employee = (struct employee_t*) malloc(sizeof(struct employee_t));
+	strncpy(new_employee->name, name, sizeof(name));
+	strncpy(new_employee->address, address, sizeof(address));
+	new_employee->hours = atoi(hours);
+	employees[dbhdr->count-1] = new_employee;
+
 	printf("%s: %s: %s\n", name, address, hours);
 	return STATUS_SUCCESS;
 }
@@ -47,12 +50,13 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 		return STATUS_ERROR;
 	}
 
-	if (dbhdr == NULL || employeesOut == NULL) {
+	if (dbhdr == NULL) {
 		printf("Invalid NULL arguments.\n");
 		return STATUS_ERROR;
 	}
 
 	int count = dbhdr->count;
+	employeesOut = calloc(count, sizeof(struct employee_t*));
 	employee_t *employees = calloc(count, sizeof(struct employee_t));
 
 	if (employees == NULL) {
@@ -67,8 +71,8 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 
 	for (int i = 0; i < count; i++) {
 		employees[i].hours = ntohl(employees[i].hours);
+		employeesOut[i]->hours = employees[i].hours;
 	}
-	*employeesOut = employees;
 	return STATUS_SUCCESS;
 }
 

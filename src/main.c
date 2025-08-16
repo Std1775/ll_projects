@@ -8,6 +8,17 @@
 #include "file.h"
 #include "parse.h"
 
+static void clean_up(dbheader_t *dbhdr, employee_t **employees) {
+	for (int i = 0; i < dbhdr->count; i++) {
+		if (employees[i]) {
+			free(employees[i]);
+		}
+	}
+	if (employees) {
+		free(employees);
+	}
+}
+
 void print_usage(char *argv[]) {
 	printf("Usage: %s -n -f <database file>\n", argv[0]);
 	printf("\t -n	- create new database file\n");
@@ -82,6 +93,10 @@ int main(int argc, char *argv[]) {
 
 	if (read_employees(dbfd, header, employees) == STATUS_ERROR) {
 		printf("Failed to read employees.\n");
+		clean_up(header, employees);
+		if (header) {
+			free(header);
+		}
 		close(dbfd);
 		return 0;
 	}
@@ -98,6 +113,10 @@ int main(int argc, char *argv[]) {
 
 	if (output_file(dbfd, header, employees) == STATUS_ERROR) {
 		printf("Failed to output database header.\n");
+		clean_up(header, employees);
+		if (header) {
+			free(header);
+		}
 		close(dbfd);
 		return -1;
 	}
