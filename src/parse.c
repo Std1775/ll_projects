@@ -66,7 +66,7 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 	dbheader_t out_header = {0};
 	out_header.magic = htonl(dbhdr->magic);
 	out_header.version = htons(dbhdr->version);
-	out_header.filesize = htonl(sizeof(dbheader_t) + (dbhdr->count * sizeof(employee_t)));
+	out_header.filesize = htonl(sizeof(dbheader_t));
 	out_header.count = htons(dbhdr->count);
 
 	lseek(fd, 0, SEEK_SET);
@@ -87,6 +87,8 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 }	
 
 int validate_db_header(int fd, struct dbheader_t **headerOut) {
+	struct stat dbstat = {0};
+
 	if (fd < 0) {
 		printf("Bad FD from the user\n");
 		return STATUS_ERROR;
@@ -120,7 +122,6 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 		return STATUS_ERROR;
 	}
 
-	struct stat dbstat = {0};
 	fstat(fd, &dbstat);
 	if (header->filesize != dbstat.st_size) {
 		printf("Corrupted database.\n");
