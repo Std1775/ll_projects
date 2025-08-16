@@ -24,7 +24,7 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 	}
 }
 
-int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *addstring) {
+int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *addstring) {
 	if (dbhdr == NULL || employees == NULL || addstring == NULL) {
 		printf("Invalid NULL arguments.\n");
 		return STATUS_ERROR;
@@ -34,9 +34,9 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
 	char *address = strtok(NULL, ",");
 	char *hours = strtok(NULL, ",");
 
-	strncpy(employees[dbhdr->count-1].name, name, sizeof(employees[dbhdr->count-1].name));
-	strncpy(employees[dbhdr->count-1].address, address, sizeof(employees[dbhdr->count-1].address));
-	employees[dbhdr->count-1].hours = atoi(hours);
+	strncpy(employees[dbhdr->count-1]->name, name, sizeof(employees[dbhdr->count-1]->name));
+	strncpy(employees[dbhdr->count-1]->address, address, sizeof(employees[dbhdr->count-1]->address));
+	employees[dbhdr->count-1]->hours = atoi(hours);
 	printf("%s: %s: %s\n", name, address, hours);
 	return STATUS_SUCCESS;
 }
@@ -53,14 +53,14 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 	}
 
 	int count = dbhdr->count;
-	employee_t *employees = calloc(count, sizeof(employee_t));
+	employee_t *employees = calloc(count, sizeof(struct employee_t));
 
 	if (employees == NULL) {
 		printf("Malloc failed.\n");
 		return STATUS_ERROR;
 	}
 
-	if ((read(fd, employees, count * sizeof(employee_t))) < 0) {
+	if ((read(fd, employees, count * sizeof(struct employee_t))) < 0) {
 		printf("Read failed.\n");
 		return STATUS_ERROR;
 	}

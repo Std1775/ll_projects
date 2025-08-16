@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
 
 	if (addstring) {
 		header->count++;
-		employees = realloc(employees, sizeof(employee_t) * header->count);
-		add_employee(header, employees, addstring);
+		employees = realloc(employees, sizeof(struct employee_t) * (header->count));
+		add_employee(header, &employees, addstring);
 	}
 
 	if (list) {
