@@ -68,19 +68,18 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 	dbheader_t out_header = {0};
 	out_header.magic = htonl(dbhdr->magic);
 	out_header.version = htons(dbhdr->version);
-	out_header.filesize = htonl(sizeof(dbheader_t));
 	out_header.filesize = htonl(sizeof(struct dbheader_t) + (real_cnt * sizeof(struct employee_t)));
 	out_header.count = htons(dbhdr->count);
 
 	lseek(fd, 0, SEEK_SET);
-	if ((write(fd, &out_header, sizeof(dbheader_t))) == -1) {
+	if ((write(fd, &out_header, sizeof(struct dbheader_t))) == -1) {
 		perror("Failed to write db header into file.\n");
 		return STATUS_ERROR;
 	}
 
-	for (int i = 0; i < dbhdr->count; i++) {
+	for (int i = 0; i < real_cnt; i++) {
 		employees[i].hours = htonl(employees[i].hours);
-		if ((write(fd, &employees[i], sizeof(employee_t))) == -1) {
+		if ((write(fd, &employees[i], sizeof(struct employee_t))) == -1) {
 			perror("Failed to write employee info into file.\n");
 			return STATUS_ERROR;
 		}
