@@ -42,6 +42,11 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 		return STATUS_ERROR;
 	}
 
+	if (dbhdr == NULL || employeesOut == NULL) {
+		printf("Invalid NULL arguments.\n");
+		return STATUS_ERROR;
+	}
+
 	int count = dbhdr->count;
 	employee_t *employees = calloc(count, sizeof(employee_t));
 
