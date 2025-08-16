@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 	bool newfile = false, list = false;
 	int dbfd = -1;
 	dbheader_t *header = NULL;
-	employee_t *employees = NULL;
+	employee_t **employees = NULL;
 
 	while ((op = getopt(argc, argv, "nf:a:l")) != -1) {
 		switch(op) {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 	printf("Newfile: %d\n", newfile);
 	printf("filepath: %s\n", filepath);
 
-	if (read_employees(dbfd, header, &employees) == STATUS_ERROR) {
+	if (read_employees(dbfd, header, employees) == STATUS_ERROR) {
 		printf("Failed to read employees.\n");
 		close(dbfd);
 		return 0;
@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
 
 	if (addstring) {
 		header->count++;
-		employees = realloc(employees, sizeof(struct employee_t) * (header->count));
-		add_employee(header, &employees, addstring);
+		employees = realloc(employees, sizeof(struct employee_t*)*(header->count));
+		add_employee(header, employees, addstring);
 	}
 
 	if (list) {
