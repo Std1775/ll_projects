@@ -63,14 +63,13 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 		return STATUS_ERROR;
 	}
 
+	int real_cnt = dbhdr->count;
+
 	dbheader_t out_header = {0};
 	out_header.magic = htonl(dbhdr->magic);
 	out_header.version = htons(dbhdr->version);
-<<<<<<< Updated upstream
 	out_header.filesize = htonl(sizeof(dbheader_t));
-=======
-	out_header.filesize = htonl(sizeof(struct dbheader_t) + (dbhdr->count * sizeof(struct employee_t)));
->>>>>>> Stashed changes
+	out_header.filesize = htonl(sizeof(struct dbheader_t) + (real_cnt * sizeof(struct employee_t)));
 	out_header.count = htons(dbhdr->count);
 
 	lseek(fd, 0, SEEK_SET);
