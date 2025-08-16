@@ -11,6 +11,11 @@
 #include "parse.h"
 
 void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
+	if (dbhdr == NULL || employees == NULL) {
+		printf("Invalid NULL arguments.\n");
+		return;
+	}
+
 	for (int i = 0; i < dbhdr->count; i++) {
 		printf("Employee %d\n", i);
 		printf("\tName: %s\n", employees[i].name);
@@ -20,14 +25,14 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 }
 
 int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *addstring) {
+	if (dbhdr == NULL || employees == NULL || addstring == NULL) {
+		printf("Invalid NULL arguments.\n");
+		return STATUS_ERROR;
+	}
+
 	char *name = strtok(addstring, ",");
 	char *address = strtok(NULL, ",");
 	char *hours = strtok(NULL, ",");
-
-	if (dbhdr == NULL || employees == NULL || addstring == NULL) {
-		printf("Invalid arguments being NULL.\n");
-		return STATUS_ERROR;
-	}
 
 	strncpy(employees[dbhdr->count-1].name, name, sizeof(employees[dbhdr->count-1].name));
 	strncpy(employees[dbhdr->count-1].address, address, sizeof(employees[dbhdr->count-1].address));
