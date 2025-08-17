@@ -24,7 +24,7 @@ void print_usage(char *argv[]) {
 }
 
 int main(int argc, char *argv[]) { 
-	int op = 0;
+	int op = 0, ret = STATUS_ERROR;
 	char *filepath = NULL, *addstring = NULL;
 	bool newfile = false, list = false;
 	int dbfd = -1;
@@ -41,12 +41,12 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'a':
 				addstring = optarg;
-				printf("=====MAIN: %s ======\n", addstring);
 				break;
 			case 'l':
 				list = true;
 				break;
 			case '?':
+				printf("Unknown option: %c\n", optopt);
 				break;
 			default:
 				return STATUS_ERROR;
@@ -87,29 +87,34 @@ int main(int argc, char *argv[]) {
 	printf("Newfile: %d\n", newfile);
 	printf("filepath: %s\n", filepath);
 
-	if (header->count > 0) {
-		if (read_employees(dbfd, header, &employees) == STATUS_ERROR) {
-			printf("Failed to read employees.\n");
-			clean_up(header, employees);
-			close(dbfd);
-			return STATUS_ERROR;
-		}
+	if (read_employees(dbfd, header, &employees) == STATUS_ERROR) {
+		printf("Failed to read employees.\n");
+		clean_up(header, employees);
+		close(dbfd);
+		return STATUS_ERROR;
 	}
 
 	if (addstring) {
-		add_employee(header, &employees, addstring);
+		ret = add_employee(header, &employees, addstring);
+		if (ret == STATUS_ERROR) {
+			printf("Failed to add employee.\n");
+			clean_up(header, employees);
+			close(dbfd);
+			return ret;
+		}
 	}
 
 	if (list) {
 		list_employees(header, employees);
 	}
 
-	if (output_file(dbfd, header, employees) == STATUS_ERROR) {
-		printf("Failed to output database header.\n");
-		clean_up(header, employees);
-		close(dbfd);
-		return STATUS_ERROR;
-	}
+	output_file(dbfd, header, employees);
+	//if (output_file(dbfd, header, employees) == STATUS_ERROR) {
+	//	printf("Failed to output database header.\n");
+	//	clean_up(header, employees);
+	//	close(dbfd);
+	//	return STATUS_ERROR;
+	//}
 	clean_up(header, employees);
 	close(dbfd);
 	return 0;

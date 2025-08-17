@@ -10,8 +10,12 @@
 
 
 int create_db_file(char *filename) {
-	int dbfd = open(filename, O_RDONLY);
+	if (filename == NULL) {
+		printf("Filename is NULL.\n");
+		return STATUS_ERROR;
+	}
 
+	int dbfd = open(filename, O_RDONLY);
 	if (dbfd != -1) {
 		close(dbfd);
 		printf("File already exists.\n");
@@ -27,8 +31,12 @@ int create_db_file(char *filename) {
 }
 
 int open_db_file(char *filename) {
-	int dbfd = open(filename, O_RDWR);
+	if (filename == NULL) {
+		printf("Filename is NULL.\n");
+		return STATUS_ERROR;
+	}
 
+	int dbfd = open(filename, O_RDWR);
 	if (dbfd == -1) {
 		printf("Failed to open database file: %s.\n", filename);
 		return STATUS_ERROR;

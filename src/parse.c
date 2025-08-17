@@ -25,10 +25,16 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 }
 
 int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *addstring) {
-	if (dbhdr == NULL || addstring == NULL || addstring[0] == '\0') {
-		printf("Invalid NULL arguments.\n");
+    if (dbhdr == NULL || employees == NULL || addstring == NULL || addstring[0] == '\0') {
+        printf("Invalid NULL arguments.\n");
+        return STATUS_ERROR;
+    }
+
+	if (dbhdr->count < 0 || dbhdr->count > MAX_EMPLOYEES) {
+		printf("Invalid employee count: %d\n", dbhdr->count);
 		return STATUS_ERROR;
 	}
+
 	int cur_cnt = dbhdr->count;
 	(dbhdr->count)++;
 
@@ -39,7 +45,9 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
 	}
 	*employees = tmp;
 
-	char tmpstr[256];
+	memset(&((*employees)[cur_cnt]), 0, sizeof(struct employee_t));
+
+	char tmpstr[MAX_STRING_LEN];
 	strncpy(tmpstr, addstring, sizeof(tmpstr));
 	tmpstr[sizeof(tmpstr)-1] = '\0';
 
@@ -49,16 +57,17 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
 
 	if (!name || !address || !hours) {
 		perror("strtok malformed string.\n");
+		(dbhdr->count)--;
 		free(*employees);
+		*employees = NULL;
 		return STATUS_ERROR;
 	}
 
-
-	snprintf((*employees)[cur_cnt].name, sizeof((*employees)[cur_cnt].name), "%s", name);
-	snprintf((*employees)[cur_cnt].address, sizeof((*employees)[cur_cnt].address), "%s", address);
+	strncpy((*employees)[dbhdr->count-1].name, name, sizeof((*employees)[dbhdr->count-1].name));
+	strncpy((*employees)[dbhdr->count-1].address, address, sizeof((*employees)[dbhdr->count-1].address));
+	//snprintf((*employees)[cur_cnt].name, sizeof((*employees)[cur_cnt].name), "%s", name);
+	//snprintf((*employees)[cur_cnt].address, sizeof((*employees)[cur_cnt].address), "%s", address);
 	(*employees)[cur_cnt].hours = atoi(hours);
-
-	printf("[%s] - [%s] - [%s]\n", hours, name, address);
 
 	return STATUS_SUCCESS;
 }
@@ -72,6 +81,17 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 	if (dbhdr == NULL) {
 		printf("Invalid NULL arguments.\n");
 		return STATUS_ERROR;
+	}
+
+	if (dbhdr->count < 0 || dbhdr->count > MAX_EMPLOYEES) {
+		printf("Invalid employee count: %d\n", dbhdr->count);
+		return STATUS_ERROR;
+	}
+
+	if (dbhdr->count == 0) {
+		printf("No employees to read.\n");
+		*employeesOut = NULL;
+		return STATUS_SUCCESS;
 	}
 
 	int count = dbhdr->count;
@@ -106,6 +126,11 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 		return STATUS_ERROR;
 	}
 
+	if (dbhdr == NULL) {
+		printf("Invalid NULL arguments.\n");
+		return STATUS_ERROR;
+	}
+
 	int real_cnt = dbhdr->count;
 
 	dbhdr->magic = htonl(dbhdr->magic);
@@ -119,7 +144,11 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 		return STATUS_ERROR;
 	}
 
-	printf("DEBUG - output_file, count: %d\n", real_cnt);
+	if (employees == NULL) {
+		printf("No employees to write.\n");
+		return STATUS_SUCCESS;
+	}
+
 	for (int i = 0; i < real_cnt; i++) {
 		employees[i].hours = htonl(employees[i].hours);
 		if ((write(fd, &employees[i], sizeof(struct employee_t))) == -1) {
@@ -179,13 +208,12 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 }
 
 int create_db_header(struct dbheader_t **headerOut) {
-	dbheader_t *header = calloc(1, sizeof(dbheader_t));	
-
 	if (headerOut == NULL) {
 		printf("headerOut is empty.\n");
 		return STATUS_ERROR;
 	}
-	
+
+	dbheader_t *header = calloc(1, sizeof(dbheader_t));
 	if (header == NULL) {
 		printf("Malloc failed to create db header.\n");
 		return STATUS_ERROR;
