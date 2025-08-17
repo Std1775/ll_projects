@@ -8,21 +8,19 @@
 #include "file.h"
 #include "parse.h"
 
-static void clean_up(dbheader_t *dbhdr, employee_t **employees) {
-	for (int i = 0; i < dbhdr->count; i++) {
-		if (employees[i]) {
-			free(employees[i]);
-		}
-	}
+static void clean_up(dbheader_t *dbhdr, employee_t *employees) {
 	if (employees) {
 		free(employees);
+	}
+	if (dbhdr) {
+		free(dbhdr);
 	}
 }
 
 void print_usage(char *argv[]) {
 	printf("Usage: %s -n -f <database file>\n", argv[0]);
 	printf("\t -n	- create new database file\n");
-	printf("\t -n	- (required) path to database file\n");
+	printf("\t -f	- (required) path to database file\n");
 }
 
 int main(int argc, char *argv[]) { 
@@ -31,7 +29,7 @@ int main(int argc, char *argv[]) {
 	bool newfile = false, list = false;
 	int dbfd = -1;
 	dbheader_t *header = NULL;
-	employee_t **employees = NULL;
+	employee_t *employees = NULL;
 
 	while ((op = getopt(argc, argv, "nf:a:l")) != -1) {
 		switch(op) {
@@ -45,6 +43,7 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'a':
 				addstring = optarg;
+				printf("=====MAIN: %s ======\n", addstring);
 				break;
 			case 'l':
 				list = true;
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]) {
 				//printf("Unknown option -%c\n", op);
 				break;
 			default:
-				return -1;
+				return STATUS_ERROR;
 		}
 	}
 
@@ -66,46 +65,49 @@ int main(int argc, char *argv[]) {
 	if (newfile) {
 		if ((dbfd = create_db_file(filepath)) == STATUS_ERROR) {
 			printf("Unable to create database file.\n");
-			return -1;
+			return STATUS_ERROR;
 		}
 		
 		if (create_db_header(&header) == STATUS_ERROR) {
 			printf("Failed to create database header.\n");
 			close(dbfd);
-			return -1;
+			return STATUS_ERROR;
 		}
 	} else {
 		dbfd = open_db_file(filepath);
 		if (dbfd == STATUS_ERROR) {
 			printf("Unable to open database file.\n");
 			close(dbfd);
-			return -1;
+			return STATUS_ERROR;
 		}
 		if ((validate_db_header(dbfd, &header)) == STATUS_ERROR) {
 			printf("Failed to validate database header.\n");
 			close(dbfd);
-			return -1;
+			return STATUS_ERROR;
 		}
 
 	}
 	printf("Newfile: %d\n", newfile);
 	printf("filepath: %s\n", filepath);
 
-	if (read_employees(dbfd, header, employees) == STATUS_ERROR) {
-		printf("Failed to read employees.\n");
-		clean_up(header, employees);
-		if (header) {
-			free(header);
+	printf("XY DEBUG - read_employees, count: %d\n", header->count);
+	if (header->count > 0) {
+		if (read_employees(dbfd, header, &employees) == STATUS_ERROR) {
+			printf("Failed to read employees.\n");
+			clean_up(header, employees);
+			close(dbfd);
+			return STATUS_ERROR;
 		}
-		close(dbfd);
-		return 0;
 	}
 
 	if (addstring) {
 		header->count++;
-		employees = realloc(employees, sizeof(struct employee_t*)*(header->count));
-		add_employee(header, employees, addstring);
+		add_employee(header, &employees, addstring);
+		for (int i = 0; i < header->count; i++) {
+			printf("%d - AFTER COPY: %s: %s: %d\n", i, (employees[i]).name, (employees[i]).address, (employees[i]).hours);
+		}
 	}
+
 
 	if (list) {
 		list_employees(header, employees);
@@ -114,12 +116,10 @@ int main(int argc, char *argv[]) {
 	if (output_file(dbfd, header, employees) == STATUS_ERROR) {
 		printf("Failed to output database header.\n");
 		clean_up(header, employees);
-		if (header) {
-			free(header);
-		}
 		close(dbfd);
-		return -1;
+		return STATUS_ERROR;
 	}
+	clean_up(header, employees);
 	close(dbfd);
 	return 0;
 }
