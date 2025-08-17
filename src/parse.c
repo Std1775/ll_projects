@@ -25,38 +25,40 @@ void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
 }
 
 int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *addstring) {
-	if (dbhdr == NULL || addstring == NULL) {
+	if (dbhdr == NULL || addstring == NULL || addstring[0] == '\0') {
 		printf("Invalid NULL arguments.\n");
 		return STATUS_ERROR;
 	}
+	int cur_cnt = dbhdr->count;
+	(dbhdr->count)++;
 
-	printf("== Add employee, add string: %s, count %d===\n", addstring, dbhdr->count);
-	struct employee_t* tmp= realloc(*employees, sizeof(struct employee_t)*(dbhdr->count));
+	struct employee_t* tmp = realloc(*employees, sizeof(struct employee_t)*(dbhdr->count));
 	if (tmp == NULL) {
 		perror("realloc\n");
 		return STATUS_ERROR;
 	}
 	*employees = tmp;
 
-	char *name = strtok(addstring, ",");
+	char tmpstr[256];
+	strncpy(tmpstr, addstring, sizeof(tmpstr));
+	tmpstr[sizeof(tmpstr)-1] = '\0';
+
+	char *name = strtok(tmpstr, ",");
 	char *address = strtok(NULL, ",");
 	char *hours = strtok(NULL, ",");
-	int cur_cnt = (dbhdr->count) - 1;
 
 	if (!name || !address || !hours) {
-   		perror("Invalid input\n"); 
-    	return STATUS_ERROR;
+		perror("strtok malformed string.\n");
+		free(*employees);
+		return STATUS_ERROR;
 	}
 
-	printf("BEFORE COPY - %s: %s: %s\n", name, address, hours);
 
 	snprintf((*employees)[cur_cnt].name, sizeof((*employees)[cur_cnt].name), "%s", name);
 	snprintf((*employees)[cur_cnt].address, sizeof((*employees)[cur_cnt].address), "%s", address);
 	(*employees)[cur_cnt].hours = atoi(hours);
-	for (int i = 0; i < dbhdr->count; i++) {
-		printf("%d - AFTER COPY: %s: %s: %d\n", i, (*employees)[i].name, (*employees)[i].address, (*employees)[i].hours);
-	}
-	printf("==========\n");
+
+	printf("[%s] - [%s] - [%s]\n", hours, name, address);
 
 	return STATUS_SUCCESS;
 }
@@ -73,24 +75,27 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
 	}
 
 	int count = dbhdr->count;
-	printf("count: %d\n", dbhdr->count);
-	*employeesOut = calloc(count, sizeof(struct employee_t));
+	ssize_t n = 0;
 
-	if (*employeesOut == NULL) {
-	    printf("Malloc failed.\n");
-	    return STATUS_ERROR;
-	}
-	
-	// Read data directly into employeesOut
-	if ((read(fd, *employeesOut, count * sizeof(struct employee_t))) < 0) {
-	    printf("Read failed.\n");
-	    return STATUS_ERROR;
+	struct employee_t *employees = calloc(count, sizeof(struct employee_t));
+	if (employees == NULL) {
+		printf("Malloc failed\n");
+		return STATUS_ERROR;
 	}
 
-	for (int i = 0; i < count; i++) {
-		(*employeesOut)[i].hours = ntohl((*employeesOut)[i].hours);
+	n = read(fd, employees, count*sizeof(struct employee_t));
+	if (n != count * sizeof(struct employee_t)) {
+		perror("Failed to read employees\n");
+		free(employees);
+		return STATUS_ERROR;
 	}
-	printf("DEBUG - read done.\n");
+
+	int i = 0;
+	for (; i < count; i++) {
+		employees[i].hours = ntohl(employees[i].hours);
+	}
+
+	*employeesOut = employees;
 	
 	return STATUS_SUCCESS;
 }
@@ -116,7 +121,6 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
 
 	printf("DEBUG - output_file, count: %d\n", real_cnt);
 	for (int i = 0; i < real_cnt; i++) {
-		printf("---- %s: %s: %d -----\n", employees[i].name, employees[i].address, employees[i].hours);
 		employees[i].hours = htonl(employees[i].hours);
 		if ((write(fd, &employees[i], sizeof(struct employee_t))) == -1) {
 			perror("Failed to write employee info into file.\n");
@@ -187,9 +191,9 @@ int create_db_header(struct dbheader_t **headerOut) {
 		return STATUS_ERROR;
 	}
 	header->version = 0x1;
-	header->count = 0x0;
+	header->count = 0;
 	header->magic = HEADER_MAGIC;
-	header->filesize = sizeof(dbheader_t);
+	header->filesize = sizeof(struct dbheader_t);
 
 	*headerOut = header;
 	return STATUS_SUCCESS;

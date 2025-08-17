@@ -8,12 +8,12 @@
 #include "file.h"
 #include "parse.h"
 
-static void clean_up(dbheader_t *dbhdr, employee_t *employees) {
+static void clean_up(dbheader_t *header, employee_t *employees) {	
+	if (header) {
+		free(header);
+	}
 	if (employees) {
 		free(employees);
-	}
-	if (dbhdr) {
-		free(dbhdr);
 	}
 }
 
@@ -35,11 +35,9 @@ int main(int argc, char *argv[]) {
 		switch(op) {
 			case 'f':
 				filepath = optarg;
-				//printf("This is option f\n");
 				break;
 			case 'n':
 				newfile = true;
-				//printf("This is option n\n");
 				break;
 			case 'a':
 				addstring = optarg;
@@ -49,7 +47,6 @@ int main(int argc, char *argv[]) {
 				list = true;
 				break;
 			case '?':
-				//printf("Unknown option -%c\n", op);
 				break;
 			default:
 				return STATUS_ERROR;
@@ -90,7 +87,6 @@ int main(int argc, char *argv[]) {
 	printf("Newfile: %d\n", newfile);
 	printf("filepath: %s\n", filepath);
 
-	printf("XY DEBUG - read_employees, count: %d\n", header->count);
 	if (header->count > 0) {
 		if (read_employees(dbfd, header, &employees) == STATUS_ERROR) {
 			printf("Failed to read employees.\n");
@@ -101,13 +97,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (addstring) {
-		header->count++;
 		add_employee(header, &employees, addstring);
-		for (int i = 0; i < header->count; i++) {
-			printf("%d - AFTER COPY: %s: %s: %d\n", i, (employees[i]).name, (employees[i]).address, (employees[i]).hours);
-		}
 	}
-
 
 	if (list) {
 		list_employees(header, employees);
