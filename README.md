@@ -1,1 +1,1 @@
-LL academy projects
+LL course1 projects
