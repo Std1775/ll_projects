@@ -65,8 +65,6 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t **employees, char *
 
 	strncpy((*employees)[dbhdr->count-1].name, name, sizeof((*employees)[dbhdr->count-1].name));
 	strncpy((*employees)[dbhdr->count-1].address, address, sizeof((*employees)[dbhdr->count-1].address));
-	//snprintf((*employees)[cur_cnt].name, sizeof((*employees)[cur_cnt].name), "%s", name);
-	//snprintf((*employees)[cur_cnt].address, sizeof((*employees)[cur_cnt].address), "%s", address);
 	(*employees)[cur_cnt].hours = atoi(hours);
 
 	return STATUS_SUCCESS;
@@ -226,5 +224,3 @@ int create_db_header(struct dbheader_t **headerOut) {
 	*headerOut = header;
 	return STATUS_SUCCESS;
 }
-
-

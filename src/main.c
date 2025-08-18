@@ -109,12 +109,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	output_file(dbfd, header, employees);
-	//if (output_file(dbfd, header, employees) == STATUS_ERROR) {
-	//	printf("Failed to output database header.\n");
-	//	clean_up(header, employees);
-	//	close(dbfd);
-	//	return STATUS_ERROR;
-	//}
 	clean_up(header, employees);
 	close(dbfd);
 	return 0;
